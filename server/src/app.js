@@ -1,38 +1,36 @@
 import express from 'express'
-import cors from 'express'
+import cors from 'cors'
 import sqlite3 from 'sqlite3'
 
 const db = new sqlite3.Database('db.sqlite')
 const app = express()
-app.use(express.json())
 app.use(cors())
+app.use(express.json())
 const PORT = 4000
 
 const createProdutoTable = async () => {
     db.serialize(() => {
         db.exec(
-            "CREATE TABLE IF NOT EXISTS Produto (produtoId TEXT PRIMARY KEY, nome TEXT, valor NUMERIC)"
+            "CREATE TABLE IF NOT EXISTS Produto (produtoId INTEGER PRIMARY KEY, nome TEXT, valor TEXT)"
         )
     })
 }
 
 createProdutoTable()
 
-app.get('/produtos', (req, res) => {
+app.get('/produtos', async (req, res) => {
     let sql = "SELECT * FROM Produto"
 
     db.serialize(() => {
         db.all(sql, function (err, rows) {
             if (err) return res.status(500).json({ err, msg: err.message })
-            console.log(rows)
             res.json(rows)
         })
     })
 })
 
-app.post('/criar-produto', (req, res) => {
+app.post('/criar-produto', async (req, res) => {
     let sql = "INSERT INTO Produto (nome, valor) VALUES (?,?)"
-
     db.serialize(() => {
         db.run(
             sql,
@@ -42,12 +40,13 @@ app.post('/criar-produto', (req, res) => {
             ]
         )
     })
+    res.send('criado')
 })
 
 app.delete('/deleta/:id', async (req, res) => {
     let sql = 'DELETE FROM Produto WHERE produtoId = ?'
     db.serialize(() => {
-        db.exec(
+        db.run(
             sql,
             [
                 req.params.id
