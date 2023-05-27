@@ -1,0 +1,2 @@
+# bomba
+mobile kekw
