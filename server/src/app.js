@@ -23,11 +23,9 @@ app.get('/produtos', (req, res) => {
 
     db.serialize(() => {
         db.all(sql, function (err, rows) {
-            var jsondata = (JSON.stringify(rows))
-
-            res.setHeader("Content-Type", "application/json; charset=UTF-8")
-            res.writeHead(200)
-            res.end(jsondata)
+            if (err) return res.status(500).json({ err, msg: err.message })
+            console.log(rows)
+            res.json(rows)
         })
     })
 })
