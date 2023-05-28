@@ -1,29 +1,33 @@
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, Button } from 'react-native';
 import { useEffect, useState } from "react";
 import axios from "axios";
+const URL = "http://localhost:4000"
 
 export default function App() {
   const [produtos, setProdutos] = useState([])
   const [nome, setNome] = useState("")
   const [valor, setValor] = useState("")
 
-  const URL = "http://localhost:4000"
 
-  useEffect(() => {
-    axios.get(`${URL}/produtos`).then((response) => {
-      console.log(response.data)
-      setProdutos(response.data)
-    })
-  })
-
-  const delProduto = (id) => {
-    axios.delete(`${URL}/deleta/` + id).then((response) => {
-      console.log(response)
-    })
+  const fetchProdutos = async () => {
+    const res = await axios.get(`${URL}/produtos`);
+    console.log(res.data);
+    setProdutos(res.data.produtos);
   }
 
-  const addProduto = () => {
-    axios.post(`${URL}/criar-produto`, { nome: nome, valor: valor }).then((res) => console.log(res))
+  useEffect(() => {
+    fetchProdutos();
+  }, [])
+
+  const delProduto = async (id) => {
+    await axios.delete(`${URL}/deleta/` + id);
+    fetchProdutos();
+  }
+
+  const addProduto = async () => {
+    console.log("adding product: ", { nome: nome, valor: valor });
+    const res = await axios.post(`${URL}/criar-produto`, { nome: nome, valor: valor });
+    fetchProdutos();
   }
 
   return (
@@ -34,28 +38,29 @@ export default function App() {
           placeholder={'Digite o seu produto'}
           style={styles.inputPadrao}
           onChangeText={setNome}
+          value={nome}
         />
         <TextInput
           label={'Valor'}
           placeholder={'Digite o valor do produto'}
           style={styles.inputPadrao}
           onChangeText={setValor}
+          value={valor}
         />
-        <Button style={styles.botaoAdicionar} onPress={() => { addProduto() }}>
+        <TouchableOpacity style={styles.botaoAdicionar} onPress={async () => {
+            await addProduto();
+          }}>
           <Text>Adicionar</Text>
-        </Button>
-      </View>
-
-      {
-        produtos.map((prod) => {
+        </TouchableOpacity>
+      {produtos.map((prod) => (
           <View >
-            <View style={styles.bomba}>{prod.nome} - {prod.valor}</View>
-            <TouchableOpacity style={styles.botaoDeletar} onPress={delProduto(prod.id)}>
-              Deletar
+            <View style={styles.bomba}><Text>{prod.nome} - {prod.valor}</Text></View>
+            <TouchableOpacity style={styles.botaoDeletar} onPress={() => delProduto(prod.produtoId)}>
+              <Text>Deletar</Text>
             </TouchableOpacity>
           </View>
-        })
-      }
+        ))}
+      </View>
     </View >
   );
 }
@@ -87,6 +92,6 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   bomba: {
-    backgroundColor: "#000"
+    color: "black"
   }
 });

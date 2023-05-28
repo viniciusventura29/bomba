@@ -8,10 +8,12 @@ app.use(cors())
 app.use(express.json())
 const PORT = 4000
 
+app.disable('etag');
+
 const createProdutoTable = async () => {
     db.serialize(() => {
         db.exec(
-            "CREATE TABLE IF NOT EXISTS Produto (produtoId INTEGER PRIMARY KEY, nome TEXT, valor TEXT)"
+            "DROP TABLE IF EXISTS Produto; CREATE TABLE IF NOT EXISTS Produto (produtoId INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT, valor TEXT);"
         )
     })
 }
@@ -19,39 +21,53 @@ const createProdutoTable = async () => {
 createProdutoTable()
 
 app.get('/produtos', async (req, res) => {
-    let sql = "SELECT * FROM Produto"
+    let sql = "SELECT * FROM Produto;"
 
     db.serialize(() => {
         db.all(sql, function (err, rows) {
             if (err) return res.status(500).json({ err, msg: err.message })
-            res.json(rows)
+            res.json({ produtos: rows })
         })
     })
+    return;
 })
 
 app.post('/criar-produto', async (req, res) => {
-    let sql = "INSERT INTO Produto (nome, valor) VALUES (?,?)"
+    console.log('body =>', req.body);
     db.serialize(() => {
         db.run(
-            sql,
+            "INSERT INTO Produto (nome, valor) VALUES (?,?);",
             [
                 req.body.nome,
                 req.body.valor
-            ]
+            ],
+            function (err) {
+                if (err) {
+                    return res.status(500).json({ err })
+                }
+                res.json({ msg: 'ok' });
+            }
         )
     })
-    res.send('criado')
+    return;
 })
 
 app.delete('/deleta/:id', async (req, res) => {
-    let sql = 'DELETE FROM Produto WHERE produtoId = ?'
+    let sql = 'DELETE FROM Produto WHERE produtoId = ?;'
+    console.log('about to exec', sql);
     db.serialize(() => {
         db.run(
             sql,
             [
                 req.params.id
-            ])
-    })
+            ],
+            function (err) {
+                console.log('ran query with err', err);
+                if (err) return res.status(500).json({ err });
+                res.json({ deleted: 'ok' });
+            })
+    });
+    return;
 })
 
 app.listen(PORT, () =>
